@@ -15,13 +15,20 @@ const (
 
 var (
 	l *Logger
-
 )
 
 func InitLogger(level int) error {
 	l = NewLogger(level)
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	return nil
+}
 
+func SetOutput(file string) error {
+	openFile, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_RDWR|os.O_EXCL, 777)
+	if err != nil {
+		return err
+	}
+	log.SetOutput(openFile)
 	return nil
 }
 
