@@ -13,9 +13,13 @@ log.Level = 1
 log.OutFile(FILE_PATH)
 
 log.Info("INFO")
+
 log.Warn("WARN")
+
 log.Error("ERROR)
+
 log.Fatal("FATAL")
+
 log.Panic("PANIC")
 
 log.Infof("%s","INFO")
