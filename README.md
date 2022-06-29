@@ -4,12 +4,15 @@
 # usage
 
 // init
+
 log := New()
 
 // default level
+
 log.Level = 1
 
 // default null
+
 log.OutFile(FILE_PATH)
 
 log.Info("INFO")
