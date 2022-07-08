@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	level        = Trace
+	level        = TRACE
 	flag = Ldate | Ltime | Llongfile | Lmsgprefix
 )
 
