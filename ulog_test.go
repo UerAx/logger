@@ -11,14 +11,12 @@ import (
 	"testing"
 )
 
+var log = NewLog()
+
 func TestNew(t *testing.T) {
-	log := New()
-	log.OutFile("./log.log")
-	log.Level = 3
-	log.Info("test", 1)
-	log.Warn("test",2)
-	log.Error("test", 3)
-	log.Fatal("test4")
-	log.Panic("test56")
+	// u := NewLog()
+	log.Error("test")
+	log.Warn("1")
+	log.Fatal("2")
 }
 

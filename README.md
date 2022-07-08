@@ -1,15 +1,15 @@
 # ulog
-简单的分级golang日志库
+基于golang自带的log组件进行改造
 
 # usage
 
 // init
 
-log := New()
+log := NewLog()
 
 // default level
 
-log.Level = 1
+log.SetLevel(1)
 
 // default null
 

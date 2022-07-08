@@ -10,34 +10,45 @@ package ulog
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"sync/atomic"
 )
 
 const (
-	DEBUG = iota
+	TRACE = iota
+	DEBUG
 	INFO
 	WARN
 	ERROR
 	FATAL
 )
 
-type Level uint
+var (
+	level        = Trace
+	flag = Ldate | Ltime | Llongfile | Lmsgprefix
+)
+
 
 type Ulog struct {
-	info *log.Logger
-	warn *log.Logger
-	err *log.Logger
-	Level Level
+	*Logger
+	level int
 }
 
-func New() *Ulog {
-	return &Ulog{
-		log.New(os.Stdout, "[INFO] ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile),
-		log.New(os.Stdout, "[WARN] ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile),
-		log.New(os.Stderr, "[ERROR] ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile),
-		INFO,
-	}
+func NewLog() *Ulog {
+	return &Ulog{new(os.Stdout, "", flag),level,}
+}
+
+func NewErrLog() *Ulog {
+	return &Ulog{new(os.Stderr, "", flag),level,}
+}
+
+
+func (t *Ulog) SetLevel(level int) {
+	t.level = level
+}
+
+func (t *Ulog) SetOut(w io.Writer) {
+	t.SetOutput(w)
 }
 
 func (l *Ulog) OutFile(file string) {
@@ -45,63 +56,104 @@ func (l *Ulog) OutFile(file string) {
   	if err != nil {
     	l.Error("打开日志文件失败：", err)
 	}
-	l.info.SetOutput(io.MultiWriter(f, os.Stdout))
-	l.warn.SetOutput(io.MultiWriter(f, os.Stdout))
-	l.err.SetOutput(io.MultiWriter(f, os.Stderr))
+	l.SetOutput(io.MultiWriter(f))
 }
 
+func (l *Ulog) Trace(v... interface{}) {
+	if l.level <= TRACE {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintln(v...), "[TRACE] ")
+	}
+}
+
+func (l *Ulog) Tracef(format string, v ...interface{}) {
+	if l.level <= INFO {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintf(format, v...), "[TRACE] ")
+	}
+}
+
+
 func (l *Ulog) Info(v... interface{}) {
-	if l.Level <= INFO {
-		l.info.Println(v...)
+	if l.level <= INFO {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintln(v...), "[INFO] ")
 	}
 }
 
 func (l *Ulog) Infof(format string, v ...interface{}) {
-	if l.Level <= INFO {
-		l.info.Println(fmt.Sprintf(format, v...))
+	if l.level <= INFO {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintf(format, v...), "[INFO] ")
 	}
 }
 
 func (l *Ulog) Warn(v... interface{}) {
-	if l.Level <= WARN {
-		l.warn.Println(v...)
+	if l.level <= WARN {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintln(v...), "[WARN] ")
 	}
 }
 
 func (l *Ulog) Warnf(format string, v ...interface{}) {
-	if l.Level <= WARN {
-		l.warn.Println(fmt.Sprintf(format, v...))
+	if l.level <= WARN {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintf(format, v...), "[WARN] ")
 	}
 }
 
 func (l *Ulog) Error(v... interface{}) {
-	if l.Level <= ERROR {
-		l.err.Println(v...)
+	if l.level <= ERROR {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintln(v...), "[ERROR] ")
 	}
 }
 
 func (l *Ulog) Errorf(format string, v ...interface{}) {
-	if l.Level <= ERROR {
-		l.err.Println(fmt.Sprintf(format, v...))
+	if l.level <= ERROR {
+		if atomic.LoadInt32(&l.isDiscard) != 0 {
+			return
+		}
+		l.Output(2, fmt.Sprintf(format, v...), "[ERROR] ")
 	}
 }
 
 func (l *Ulog) Fatal(v... interface{}) {
-	if l.Level <= FATAL {
-		l.err.Fatalln(v...)
+	if l.level <= FATAL {
+		l.Output(2, fmt.Sprintln(v...), "[FATAL] ")
 	}
+	os.Exit(1)
 }
 
 func (l *Ulog) Fatalf(format string, v ...interface{}) {
-	if l.Level <= FATAL {
-		l.err.Fatalln(fmt.Sprintf(format, v...))
+	if l.level <= FATAL {
+		l.Output(2, fmt.Sprintf(format, v...), "[FATAL] ")
 	}
+	os.Exit(1)
 }
 
 func (l *Ulog) Panic(v... interface{}) {
-	l.Error(v...)
+	s := fmt.Sprintln(v...)
+	l.Output(2, s, "[PANIC] ")
+	panic(s)
 }
 
 func (l *Ulog) Panicf(format string, v ...interface{}) {
-	l.Errorf(format, v...)
+	s := fmt.Sprintf(format, v...)
+	l.Output(2, s, "[PANIC]")
+	panic(s)
 }
